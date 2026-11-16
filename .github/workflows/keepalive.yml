@@ -1,0 +1,23 @@
+name: Keepalive
+
+# Free Supabase projects pause after 7 days of low database activity.
+# This writes one row every 2 days so the project stays active.
+on:
+  schedule:
+    - cron: '23 5 */2 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  beat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Update heartbeat row
+        env:
+          KEEPALIVE_DB_URL: ${{ secrets.KEEPALIVE_DB_URL }}
+        run: |
+          psql "$KEEPALIVE_DB_URL" -v ON_ERROR_STOP=1 \
+            -c "update keepalive.beat set at = now() where id = 1" \
+            -c "select id, at from keepalive.beat"
